@@ -1,0 +1,266 @@
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║            UPDATED PREDICT_MUTATION.PY - QUICK REFERENCE                 ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+NEW COMMAND-LINE INTERFACE
+════════════════════════════════════════════════════════════════════════════════
+
+Basic Syntax:
+  python predict_mutation.py \
+    --model <model_dir> \
+    --fasta <fasta_file> \
+    --output <output_dir> \
+    --position <POS> \
+    --base <BASE>
+
+All paths are optional. Defaults to current directory.
+
+ARGUMENTS:
+  --model      Path to model directory (default: current dir)
+  --fasta      Path to FASTA file (default: NM_000138.5.fasta)
+  --output     Path to output directory (optional, creates if needed)
+  --position   1-indexed position [REQUIRED]
+  --base       A|C|G|T [REQUIRED]
+  --json       Output JSON format (optional)
+
+QUICK EXAMPLES
+════════════════════════════════════════════════════════════════════════════════
+
+1️⃣  Simplest (current directory):
+  $ python predict_mutation.py --position 8606 --base C
+
+2️⃣  Custom model location:
+  $ python predict_mutation.py \
+      --model /ml/models \
+      --position 8606 --base C
+
+3️⃣  Custom model + FASTA:
+  $ python predict_mutation.py \
+      --model /ml/models \
+      --fasta /data/fbn1.fasta \
+      --position 8606 --base C
+
+4️⃣  Save to output directory:
+  $ python predict_mutation.py \
+      --model /ml/models \
+      --fasta /data/fbn1.fasta \
+      --output /results \
+      --position 8606 --base C
+
+5️⃣  All options + JSON:
+  $ python predict_mutation.py \
+      --model /ml/models \
+      --fasta /data/fbn1.fasta \
+      --output /results \
+      --position 8606 \
+      --base C \
+      --json
+
+6️⃣  Get help:
+  $ python predict_mutation.py --help
+
+WORKFLOW: BATCH PREDICTIONS
+════════════════════════════════════════════════════════════════════════════════
+
+Bash script example:
+
+#!/bin/bash
+
+MODEL=/ml/fbn1_models
+FASTA=/data/fbn1.fasta
+OUTPUT=/results/predictions
+
+mkdir -p $OUTPUT
+
+# Predict multiple mutations
+for mutation in "8606,C" "8595,C" "8579,G" "1000,A"; do
+  POS=$(echo $mutation | cut -d, -f1)
+  BASE=$(echo $mutation | cut -d, -f2)
+
+  python predict_mutation.py \
+    --model $MODEL \
+    --fasta $FASTA \
+    --output $OUTPUT \
+    --position $POS \
+    --base $BASE \
+    --json
+done
+
+echo "Done! Results in $OUTPUT"
+
+PYTHON API: Using in Code
+════════════════════════════════════════════════════════════════════════════════
+
+from predict_mutation import PredictionPipeline
+
+# Initialize with custom paths
+pipeline = PredictionPipeline(
+    model_dir='/ml/models',
+    fasta_file='/data/fbn1.fasta'
+)
+
+# Single prediction
+result = pipeline.predict(8606, 'C')
+print(result['prediction'])    # 'Benign'
+print(result['confidence'])    # 0.1578
+
+# Batch predictions
+mutations = [(8606, 'C'), (8595, 'C'), (1000, 'A')]
+results = [pipeline.predict(pos, base) for pos, base in mutations]
+
+# Save to CSV
+import pandas as pd
+df = pd.DataFrame(results)
+df.to_csv('predictions.csv')
+
+FILE STRUCTURE REQUIRED
+════════════════════════════════════════════════════════════════════════════════
+
+Model directory (--model /path):
+  ├── svm_mutation_classifier.pkl
+  ├── tfidf_vectorizer.pkl
+  └── label_encoder.pkl
+
+FASTA file (--fasta /path):
+  └── NM_000138.5.fasta (or any reference sequence)
+
+Output directory (--output /path):
+  Created automatically, contains:
+  └── prediction_8606_C_20251201_112345.json
+
+ERROR QUICK FIXES
+════════════════════════════════════════════════════════════════════════════════
+
+"Model directory not found"
+  → Check path exists: ls /path/to/models
+  → Verify .pkl files: ls /path/to/models/*.pkl
+
+"FASTA file not found"
+  → Check path: ls /path/to/fasta.fasta
+  → Use absolute path: /home/user/data/fbn1.fasta
+
+"Position out of range"
+  → Position must be 1-11609
+  → Use --help to verify
+
+"Reference already has C"
+  → New base must differ from reference
+  → Try different base (A, G, T)
+
+"Permission denied"
+  → Change permissions: chmod +x predict_mutation.py
+  → Or: python3 predict_mutation.py
+
+OUTPUT EXAMPLES
+════════════════════════════════════════════════════════════════════════════════
+
+Formatted Output (default):
+  ======================================================================
+  MUTATION SEVERITY PREDICTION
+  ======================================================================
+
+  Mutation: Position 8606, T → C
+
+  ✓ Prediction: Benign
+    Confidence: 0.1578
+
+    Probability breakdown:
+      Uncertain significance        0.2532  ████████░░░░░░░░░░░░░░░░░░░░
+      Pathogenic                    0.2200  ██████░░░░░░░░░░░░░░░░░░░░░░░
+      Likely pathogenic             0.1946  █████░░░░░░░░░░░░░░░░░░░░░░░░
+      Likely benign                 0.1743  █████░░░░░░░░░░░░░░░░░░░░░░░░
+      Benign                        0.1578  ████░░░░░░░░░░░░░░░░░░░░░░░░░
+
+JSON Output (--json):
+  {
+    "position": 8606,
+    "original_base": "T",
+    "new_base": "C",
+    "prediction": "Benign",
+    "confidence": 0.1578,
+    "probabilities": {
+      "Benign": 0.1578,
+      "Likely benign": 0.1743,
+      "Uncertain significance": 0.2532,
+      "Likely pathogenic": 0.1946,
+      "Pathogenic": 0.22
+    }
+  }
+
+ENVIRONMENT SETUP
+════════════════════════════════════════════════════════════════════════════════
+
+Install dependencies:
+  $ pip install scikit-learn joblib numpy pandas
+
+Check installation:
+  $ python -c "from predict_mutation import PredictionPipeline; print('OK')"
+
+Make script executable:
+  $ chmod +x predict_mutation.py
+
+Run tests:
+  $ python predict_mutation.py --help
+  $ python predict_mutation.py --position 8606 --base C
+
+INTEGRATION EXAMPLES
+════════════════════════════════════════════════════════════════════════════════
+
+In notebook:
+  import subprocess
+  import json
+
+  result = subprocess.run([
+    'python', 'predict_mutation.py',
+    '--model', '/ml/models',
+    '--position', '8606',
+    '--base', 'C',
+    '--json'
+  ], capture_output=True, text=True)
+
+  data = json.loads(result.stdout)
+  print(data['prediction'])
+
+In pipeline:
+  for mutation in mutation_list:
+    cmd = f"python predict_mutation.py --model {{MODEL}} --position {{mutation.pos}} --base {{mutation.base}} --output {{OUTPUT}} --json"
+    subprocess.run(cmd, shell=True)
+
+TROUBLESHOOTING CHECKLIST
+════════════════════════════════════════════════════════════════════════════════
+
+Before running:
+  □ Model files present: ls {model_dir}/*.pkl
+  □ FASTA file exists: ls {fasta_file}
+  □ Python 3.7+: python --version
+  □ Dependencies: pip list | grep scikit
+  □ Output dir writable: touch {output_dir}/test.txt
+  □ Position range: 1 ≤ position ≤ 11609
+  □ Base is A/C/G/T: not same as reference
+
+Script files:
+  □ predict_mutation_v2.py exists
+  □ predict_mutation_v2.py is executable: chmod +x
+  □ No syntax errors: python -m py_compile predict_mutation_v2.py
+
+CHANGELOG
+════════════════════════════════════════════════════════════════════════════════
+
+Version 2.0 (Updated):
+  ✓ Added --model argument (custom model directory)
+  ✓ Added --fasta argument (custom FASTA path)
+  ✓ Added --output argument (result directory)
+  ✓ Timestamped output files
+  ✓ JSON file export
+  ✓ Better error handling
+  ✓ Comprehensive help text
+
+Backward Compatible:
+  ✓ All arguments optional
+  ✓ Works with defaults
+  ✓ Same API for Python
+
+════════════════════════════════════════════════════════════════════════════════
+                           Happy predicting! 🧬
+════════════════════════════════════════════════════════════════════════════════

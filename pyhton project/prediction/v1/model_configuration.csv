@@ -1,0 +1,11 @@
+Component,Specification,Description
+Feature Engineering,K-mer counting (k=3),Extracts all 3-letter nucleotide sequences from mutated DNA
+Vectorization,TF-IDF with bigrams,Weights k-mer importance across the dataset using TF-IDF
+Classifier,Support Vector Machine,SVM classifier for multi-class classification
+Kernel,Radial Basis Function (RBF),Non-linear kernel for complex decision boundaries
+Class Weight,Balanced,Accounts for class imbalance in training data
+C Parameter,10.0,Regularization strength for margin violations
+Cross-Validation,5-fold stratified,Cross-validation to ensure robust model performance
+Training Samples,150 (synthetic),30 per class (5 classes × 30)
+Features (dimensions),300,Compressed k-mer feature space
+Output Classes,5 severity levels,"Benign, Likely benign, Uncertain significance, Likely pathogenic, Pathogenic"

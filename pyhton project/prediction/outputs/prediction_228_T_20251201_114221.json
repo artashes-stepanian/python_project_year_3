@@ -1,0 +1,17 @@
+{
+  "position": 228,
+  "original_base": "G",
+  "new_base": "T",
+  "prediction": "Pathogenic",
+  "confidence": 0.1642665870759285,
+  "probabilities": {
+    "Benign": 0.006842293391664446,
+    "Benign/Likely benign": 0.004296097942930837,
+    "Conflicting classifications of pathogenicity": 0.1293451731310256,
+    "Likely benign": 0.006893493630994718,
+    "Likely pathogenic": 0.15653924894663632,
+    "Pathogenic": 0.1642665870759285,
+    "Pathogenic/Likely pathogenic": 0.06203740406258418,
+    "Uncertain significance": 0.46977970181823564
+  }
+}
